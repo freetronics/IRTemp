@@ -1,10 +1,12 @@
 /*
  * File:    readTemperature.ino
- * Version: 0.0
+ * Version: 1.0
  * Author:  Andy Gelme (@geekscape)
  * License: GPLv3
  *
- * IRTemp library uses an Arduino interrupt ...
+ * For more information see www.freetronics.com/irtemp
+ *
+ * IRTemp library uses an Arduino interrupt:
  *   If PIN_CLOCK = 2, then Arduino interrupt 0 is used
  *   If PIN_CLOCK = 3, then Arduino interrupt 1 is used
  */
@@ -18,13 +20,13 @@ static const byte PIN_ACQUIRE = 4;
 static const bool SCALE=false;  // Celcius: false, Farenheit: true
 
 IRTemp irTemp(PIN_ACQUIRE, PIN_CLOCK, PIN_DATA);
- 
+
 void setup(void) {
   Serial.begin(38400);
   Serial.println("IRTemp example");
   Serial.println("~~~~~~~~~~~~~~");
 }
- 
+
 void loop(void) {
   float irTemperature = irTemp.getIRTemperature(SCALE);
   printTemperature("IR", irTemperature);

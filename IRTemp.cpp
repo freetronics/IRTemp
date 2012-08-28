@@ -1,8 +1,10 @@
 /*
  * File:    IRTemp.cpp
- * Version: 0.0
+ * Version: 1.0
  * Author:  Andy Gelme (@geekscape)
  * License: GPLv3
+ *
+ * See www.freetronics.com/irtemp for more information.
  *
  * ToDo
  * ~~~~
