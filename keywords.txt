@@ -7,6 +7,7 @@
 #######################################
 
 IRTemp                         KEYWORD1
+TempUnit                       KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
@@ -19,4 +20,5 @@ getIRTemperature               KEYWORD2
 # Constants (LITERAL1)
 #######################################
 
-
+CELSIUS                        LITERAL1
+FAHRENHEIT                     LITERAL1

@@ -46,22 +46,20 @@ IRTemp::IRTemp(
   sensorEnable(false);
 }
 
-// SCALE: Celcius: false, Farenheit: true
-
 float IRTemp::getAmbientTemperature(
-  bool scale) {
+  TempUnit scale) {
 
   return(getTemperature(scale, IRTEMP_DATA_AMBIENT));
 }
 
 float IRTemp::getIRTemperature(
-  bool scale) {
+  TempUnit scale) {
 
   return(getTemperature(scale, IRTEMP_DATA_IR));
 }
 
 float IRTemp::getTemperature(
-  bool scale,
+  TempUnit scale,
   byte dataType) {
 
   long timeout = millis() + IRTEMP_TIMEOUT;
@@ -86,20 +84,21 @@ float IRTemp::getTemperature(
 
     if (data[0] == dataType && validData(data)) {
       sensorEnable(false);
-      float temperature = readTemperature(data);
-      if (scale) temperature = convertFarenheit(temperature);
+      float temperature = decodeTemperature(data);
+      if (scale == FAHRENHEIT)
+        temperature = convertFahrenheit(temperature);
       return temperature;
     }
   }
 }
 
-float IRTemp::convertFarenheit(
+float IRTemp::convertFahrenheit(
   float celcius) {
 
   return(celcius * 9 / 5 + 32);
 }
 
-float IRTemp::readTemperature(
+float IRTemp::decodeTemperature(
   volatile byte data[]) {
 
   int msb = data[1] << 8;

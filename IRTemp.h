@@ -16,21 +16,36 @@
  #include "WProgram.h"
 #endif
 
+typedef enum {
+  CELSIUS,
+  FAHRENHEIT
+} TempUnit;
+
 class IRTemp {
  private:
   byte _pinAcquire;
   byte _pinClock;
   byte _pinData;
 
-  float convertFarenheit(float celcius);
-  float getTemperature(bool scale, byte dataType);
-  float readTemperature(volatile byte data[]);
+  float convertFahrenheit(float celsius);
+  float getTemperature(TempUnit scale, byte dataType);
+  float decodeTemperature(volatile byte data[]);
   void  sensorEnable(bool state);
   bool  validData(byte data[]);
 
  public:
   IRTemp(byte pinAcquire, byte pinClock, byte pinData);
-  float getAmbientTemperature(bool scale=false);
-  float getIRTemperature(bool scale=false);
+  float getAmbientTemperature(TempUnit scale=CELSIUS);
+  float getIRTemperature(TempUnit scale=CELSIUS);
+
+  // Deprecated calls:
+  // for compatibility with old API which used boolean for scale,
+  // recommended to use TempUnit instead
+  inline float getAmbientTemperature(bool scale) {
+    return getAmbientTemperature(scale ? FAHRENHEIT : CELSIUS);
+  }
+  inline float getIRTemperature(bool scale) {
+    return getIRTemperature(scale ? FAHRENHEIT : CELSIUS);
+  }
 };
 #endif

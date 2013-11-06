@@ -17,7 +17,7 @@ static const byte PIN_DATA    = 2;
 static const byte PIN_CLOCK   = 3;  // Must be either pin 2 or pin 3
 static const byte PIN_ACQUIRE = 4;
 
-static const bool SCALE=false;  // Celcius: false, Farenheit: true
+static const TempUnit SCALE=CELSIUS;  // Options are CELSIUS, FAHRENHEIT
 
 IRTemp irTemp(PIN_ACQUIRE, PIN_CLOCK, PIN_DATA);
 
@@ -49,6 +49,6 @@ void printTemperature(
   }
   else {
     Serial.print(temperature);
-    Serial.println(SCALE  ?  " F"  :  " C");
+    Serial.println(SCALE == FAHRENHEIT  ?  " F"  :  " C");
   }
 }
