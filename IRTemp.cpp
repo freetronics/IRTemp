@@ -8,10 +8,6 @@
  *
  * ToDo
  * ~~~~
- * - Fix-up the half C++ and half C approach, due to the C interrupt handler.
- *
- * - Ensure Clock pin is either pin 2 or pin 3.
- *
  * - Cache previously read Ambient or IR temperature in case get*Temperature()
  *   is called more often than 0.1 seconds (minimum time between updates).
  */
@@ -23,30 +19,29 @@
 
 static const byte IRTEMP_DATA_SIZE = 5;
 
-byte irTempData[IRTEMP_DATA_SIZE];
+static const long IRTEMP_TIMEOUT = 2000;  // milliseconds
 
-bool irTempSensorEnabled;
-
-byte irTempPinAcquire;
-byte irTempPinClock;
-byte irTempPinData;
+// Each 5-byte data packet from the IRTemp is tagged with one of these
+static const long IRTEMP_DATA_AMBIENT = 0x66;
+static const long IRTEMP_DATA_IR =      0x4C;
+//static const long IRTEMP_DATA_JUNK =    0x53; // ignored, contains version info perhaps?
 
 IRTemp::IRTemp(
   byte pinAcquire,
   byte pinClock,
   byte pinData) {
 
-  irTempPinAcquire = pinAcquire;
-  irTempPinClock =   pinClock;
-  irTempPinData =    pinData;
+  _pinAcquire = pinAcquire;
+  _pinClock =   pinClock;
+  _pinData =    pinData;
 
-  pinMode(irTempPinAcquire, OUTPUT);
-  pinMode(irTempPinClock,   INPUT);
-  pinMode(irTempPinData,    INPUT);
+  pinMode(_pinAcquire, OUTPUT);
+  pinMode(_pinClock,   INPUT);
+  pinMode(_pinData,    INPUT);
 
-  digitalWrite(irTempPinAcquire, HIGH);
-  digitalWrite(irTempPinClock,   HIGH);
-  digitalWrite(irTempPinData,    HIGH);
+  digitalWrite(_pinAcquire, HIGH);
+  digitalWrite(_pinClock,   HIGH);
+  digitalWrite(_pinData,    HIGH);
 
   sensorEnable(false);
 }
@@ -74,14 +69,14 @@ float IRTemp::getTemperature(
   sensorEnable(true);
 
   while(1) {
-    memset(irTempData, 0, IRTEMP_DATA_SIZE);
+    uint8_t data[IRTEMP_DATA_SIZE] = { 0 };
     for(uint8_t data_byte = 0; data_byte < IRTEMP_DATA_SIZE; data_byte++) {
       for(int8_t data_bit = 7; data_bit >= 0; data_bit--) {
-        // Clock idles high, data changes on falling edge sample on rising edge
-        while(digitalRead(irTempPinClock) == HIGH && millis() < timeout) { } // Wait for falling edge
-        while(digitalRead(irTempPinClock) == LOW && millis() < timeout) { } // Wait for rising edge to sample
-        if(digitalRead(irTempPinData))
-          irTempData[data_byte] |= 1<<data_bit;
+        // Clock idles high, data changes on falling edge, sample on rising edge
+        while(digitalRead(_pinClock) == HIGH && millis() < timeout) { } // Wait for falling edge
+        while(digitalRead(_pinClock) == LOW && millis() < timeout) { } // Wait for rising edge to sample
+        if(digitalRead(_pinData))
+          data[data_byte] |= 1<<data_bit;
       }
     }
     if(millis() >= timeout) {
@@ -89,9 +84,9 @@ float IRTemp::getTemperature(
       return NAN;
     }
 
-    if (irTempData[0] == dataType && validData(irTempData)) {
+    if (data[0] == dataType && validData(data)) {
       sensorEnable(false);
-      float temperature = readTemperature(irTempData);
+      float temperature = readTemperature(data);
       if (scale) temperature = convertFarenheit(temperature);
       return temperature;
     }
@@ -115,10 +110,7 @@ float IRTemp::readTemperature(
 
 void IRTemp::sensorEnable(
   bool state) {
-
-  irTempSensorEnabled = state;
-
-  digitalWrite(irTempPinAcquire, ! irTempSensorEnabled);
+  digitalWrite(_pinAcquire, ! state);
 }
 
 bool IRTemp::validData(
