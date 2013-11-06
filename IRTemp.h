@@ -35,7 +35,7 @@ class IRTemp {
     float readTemperature(volatile byte data[]);
     void  resetData(void);
     void  sensorEnable(bool state);
-    bool  validData(volatile byte data[]);
+    bool  validData(byte data[]);
 
   public:
     IRTemp(byte pinAcquire, byte pinClock, byte pinData);

@@ -1,7 +1,7 @@
 /*
  * File:    IRTemp.cpp
  * Version: 1.0
- * Author:  Andy Gelme (@geekscape)
+ * Author:  Andy Gelme (@geekscape) & Angus Gratton <angus at freetronics. com>
  * License: GPLv3
  *
  * See www.freetronics.com/irtemp for more information.
@@ -14,8 +14,6 @@
  *
  * - Cache previously read Ambient or IR temperature in case get*Temperature()
  *   is called more often than 0.1 seconds (minimum time between updates).
- *
- * - Create non-interrupt version of the library.
  */
 
 #ifndef IRTEMP_cpp
@@ -23,13 +21,9 @@
 
 #include "IRTemp.h"
 
-extern void irTempInterrupt(void);
-
 static const byte IRTEMP_DATA_SIZE = 5;
 
-volatile byte irTempData[IRTEMP_DATA_SIZE];
-volatile byte irTempDataBit;
-volatile byte irTempDataIndex;
+byte irTempData[IRTEMP_DATA_SIZE];
 
 bool irTempSensorEnabled;
 
@@ -55,9 +49,6 @@ IRTemp::IRTemp(
   digitalWrite(irTempPinData,    HIGH);
 
   sensorEnable(false);
-
-  byte interruptNumber = (pinClock == 2)  ?  0  :  1;
-  attachInterrupt(interruptNumber, irTempInterrupt, FALLING);
 }
 
 // SCALE: Celcius: false, Farenheit: true
@@ -78,31 +69,33 @@ float IRTemp::getTemperature(
   bool scale,
   byte dataType) {
 
-  float temperature = NAN;
-  long  timeStart = millis();
+  long timeout = millis() + IRTEMP_TIMEOUT;
 
   sensorEnable(true);
 
-  while (isnan(temperature)) {
-    resetData();
-
-    while (irTempDataIndex < IRTEMP_DATA_SIZE) {
-      if ((millis() - timeStart) > IRTEMP_TIMEOUT) {
-        sensorEnable(false);
-        return(NAN);
+  while(1) {
+    memset(irTempData, 0, IRTEMP_DATA_SIZE);
+    for(uint8_t data_byte = 0; data_byte < IRTEMP_DATA_SIZE; data_byte++) {
+      for(int8_t data_bit = 7; data_bit >= 0; data_bit--) {
+        // Clock idles high, data changes on falling edge sample on rising edge
+        while(digitalRead(irTempPinClock) == HIGH && millis() < timeout) { } // Wait for falling edge
+        while(digitalRead(irTempPinClock) == LOW && millis() < timeout) { } // Wait for rising edge to sample
+        if(digitalRead(irTempPinData))
+          irTempData[data_byte] |= 1<<data_bit;
       }
     }
+    if(millis() >= timeout) {
+      sensorEnable(false);
+      return NAN;
+    }
 
-    if (irTempData[0] == dataType) {
-      if (validData(irTempData)) temperature = readTemperature(irTempData);
+    if (irTempData[0] == dataType && validData(irTempData)) {
+      sensorEnable(false);
+      float temperature = readTemperature(irTempData);
+      if (scale) temperature = convertFarenheit(temperature);
+      return temperature;
     }
   }
-
-  sensorEnable(false);
-
-  if (scale) temperature = convertFarenheit(temperature);
-
-  return(temperature);
 }
 
 float IRTemp::convertFarenheit(
@@ -120,13 +113,6 @@ float IRTemp::readTemperature(
   return((msb + lsb) / 16.0 - 273.15);
 }
 
-void IRTemp::resetData(void) {
-  for (byte i = 0;  i < IRTEMP_DATA_SIZE;  i ++) irTempData[i] = 0;
-
-  irTempDataBit = 8;
-  irTempDataIndex = 0;
-}
-
 void IRTemp::sensorEnable(
   bool state) {
 
@@ -135,27 +121,12 @@ void IRTemp::sensorEnable(
   digitalWrite(irTempPinAcquire, ! irTempSensorEnabled);
 }
 
-void irTempInterrupt(void) {
-  if (irTempSensorEnabled) {
-    if (irTempDataIndex < IRTEMP_DATA_SIZE) {
-      irTempDataBit --;
-      irTempData[irTempDataIndex] |=
-        digitalRead(irTempPinData) << irTempDataBit;
-
-      if (irTempDataBit == 0) {
-        irTempDataBit = 8;
-        irTempDataIndex ++;
-      }
-    }
-  }
-}
-
 bool IRTemp::validData(
-  volatile byte data[]) {
+  byte data[]) {
 
   byte checksum = (data[0] + data[1] + data[2]) & 0xff;
 
-  return(data[3] == checksum  &&  data[4] == 0x0d);
+  return(data[3] == checksum  &&  data[4] == '\r');
 }
 
 #endif
