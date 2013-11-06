@@ -22,7 +22,7 @@ static const TempUnit SCALE=CELSIUS;  // Options are CELSIUS, FAHRENHEIT
 IRTemp irTemp(PIN_ACQUIRE, PIN_CLOCK, PIN_DATA);
 
 void setup(void) {
-  Serial.begin(38400);
+  Serial.begin(9600);
   Serial.println("IRTemp example");
   Serial.println("~~~~~~~~~~~~~~");
 }
