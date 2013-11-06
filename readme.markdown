@@ -16,9 +16,11 @@ The library needs to be initialized with the Arduino pin configurations.
 
       #include "IRTemp.h"
       static const byte PIN_DATA    = 2;
-      static const byte PIN_CLOCK   = 3;  // Must be either pin 2 or pin 3
+      static const byte PIN_CLOCK   = 3;
       static const byte PIN_ACQUIRE = 4;
       IRTemp irTemp(PIN_ACQUIRE, PIN_CLOCK, PIN_DATA);
+
+Any 3 unused pins can be chosen.
 
 Once the library has been initialized, the two different temperature values
 can be obtained as follows:
@@ -32,15 +34,31 @@ number using the Celcius scale.
 Optionally, the temperature may be returned
 using the Farenheit scale as follows:
 
-      float irTemperature = irTemp.getIRTemperature(true);
-      float amTemperature = irTemp.getAmbientTemperature(true);
+      float irTemperature = irTemp.getIRTemperature(FAHRENHEIT);
+      float amTemperature = irTemp.getAmbientTemperature(FAHRENHEIT);
 
-The temperature module _clock pin_ must be connected to either Arduino
-pin D2 or pin D3.  If pin D2 is used, then Arduino interrupt 0 is used by
-the library.  Otherwise, if pin D3 is used, then Arduino interrupt 1 is
-used by the library.
-
-See examples/IRTemp/readTemperature for example source code.
+Choose File -> Examples -> IRTemp -> readTemperature in the Arduino
+IDE to see an example, including error handling.
 
 This library also works with Arduino IDE versions prior to 1.0.
 However, the examples will need to be renamed from *.ino to *.pde.
+
+# Using Multiple Sensors
+
+It is possible to connect multiple IRTemp sensors to a single
+Arduino. However you cannot share clock and data pins between sensors,
+as data is sent continously (see below.)
+
+# Two Wire Operation
+
+It is possible to use the IRTemp without the "Acquire" pin. When used
+in two wire mode, the Acquire pin on the IRTemp sensor should be
+connected directly to ground. Readings for IR & Ambient temp will be
+continuously output by the sensor.
+
+If the acquire pin is left floating or pulled up to HIGH, readings for
+Ambient temp but not IR temp will be continuously output by the
+sensor.
+
+Note that the time to take a reading is increased in two-wire mode
+(approximately one sample every 500ms, alternating IR & Ambient.)

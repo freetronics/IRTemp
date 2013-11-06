@@ -35,11 +35,13 @@ IRTemp::IRTemp(
   _pinClock =   pinClock;
   _pinData =    pinData;
 
-  pinMode(_pinAcquire, OUTPUT);
+  if(_pinAcquire != -1) {
+    pinMode(_pinAcquire, OUTPUT);
+    digitalWrite(_pinAcquire, HIGH);
+  }
   pinMode(_pinClock,   INPUT);
   pinMode(_pinData,    INPUT);
 
-  digitalWrite(_pinAcquire, HIGH);
   digitalWrite(_pinClock,   HIGH);
   digitalWrite(_pinData,    HIGH);
 
@@ -109,7 +111,8 @@ float IRTemp::decodeTemperature(
 
 void IRTemp::sensorEnable(
   bool state) {
-  digitalWrite(_pinAcquire, ! state);
+  if(_pinAcquire != -1)
+    digitalWrite(_pinAcquire, ! state);
 }
 
 bool IRTemp::validData(
