@@ -1,20 +1,16 @@
 /*
  * File:    readTemperature.ino
- * Version: 1.0
- * Author:  Andy Gelme (@geekscape)
+ * Author:  Andy Gelme (@geekscape) & Angus Gratton (angus at freetronics. com)
  * License: GPLv3
  *
  * For more information see www.freetronics.com/irtemp
  *
- * IRTemp library uses an Arduino interrupt:
- *   If PIN_CLOCK = 2, then Arduino interrupt 0 is used
- *   If PIN_CLOCK = 3, then Arduino interrupt 1 is used
  */
 
 #include "IRTemp.h"
 
-static const byte PIN_DATA    = 2;
-static const byte PIN_CLOCK   = 3;  // Must be either pin 2 or pin 3
+static const byte PIN_DATA    = 2; // Choose any pins you like for these
+static const byte PIN_CLOCK   = 3;
 static const byte PIN_ACQUIRE = 4;
 
 static const TempUnit SCALE=CELSIUS;  // Options are CELSIUS, FAHRENHEIT
